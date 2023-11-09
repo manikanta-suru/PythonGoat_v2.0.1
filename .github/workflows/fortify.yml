@@ -23,8 +23,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-  # schedule:
-   #  - cron: '42 23 * * 5'
+#  schedule:
+#    - cron: '32 22 * * 2'
 
 jobs:
   FoD-SAST-Scan:
@@ -38,53 +38,51 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.8]
-    
+        python-version: [3.8] 
+
     steps:
-      # Check out the source code
+      # Check out source code
       - name: Check Out Source Code
         uses: actions/checkout@v3
-
+        
       # Java is required to run the various Fortify utilities.
-      # When scanning a Java application, please use the appropriate Java version for building your application     
-      - name: Setup Java 11
+      # When scanning a Java application, please use the appropriate Java version for building your application.
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
           java-version: 11
-          distribution: 'temurin'         
-          
+          distribution: 'temurin'
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-version }} 
-              
+         python-version: ${{ matrix.python-version }}
       - name: Install Dependencies
-          run:|
-            python -m pip install --upgrade pip
-            pip install pipenv
-            pip install -r requirements.txt
-            pipenv install -r requirements.txt
-            
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pip install -r requirements.txt
+          pipenv install -r requirements.txt
+
       # Prepare source+dependencies for upload. The default example is for a Maven project that uses pom.xml.
       # TODO: Update PACKAGE_OPTS based on the ScanCentral Client documentation for your project's included tech stack(s). Helpful hints:
       #   ScanCentral Client will download dependencies for maven (-bt mvn) and gradle (-bt gradle).
-      #   ScanCentral Client can download dependencies for msbuild projects (-bt msbuild); however, you must convert the workflow to a Windows runner.
+      #   ScanCentral Client can download dependencies for msbuild projects (-bt msbuild); however, you must convert the workflow to use a Windows runner.
       #   ScanCentral has additional options that should be set for PHP and Python projects
       #   For other build tools, add your build commands to download necessary dependencies and prepare according to Fortify on Demand Packaging documentation.
       #   ScanCentral Client documentation is located at https://www.microfocus.com/documentation/fortify-software-security-center/
       - name: Download Fortify ScanCentral Client
         uses: fortify/gha-setup-scancentral-client@5b7382f8234fb9840958c49d5f32ae854115f9f3
-        with: 
+        with:
           version: 23.1.0
-          
       - name: Package Code + Dependencies
         run: scancentral package $PACKAGE_OPTS -o package.zip
         env:
           PACKAGE_OPTS: "-bt none -oss"
 
-      # Start Fortify on Demand SAST scan and wait until results are complete. For more information on FoDUploader commands, see https://github.com/fod-dev/fod-uploader-java
+      # Start Fortify on Demand SAST scan and wait until results complete. For more information on FoDUploader commands, see https://github.com/fod-dev/fod-uploader-java
       # TODO: Update ENV variables for your application and create the necessary GitHub Secrets.  Helpful hints:
-      #   Credentials and release ID should be obtained from your FoD tenant (either a Personal Access Token or API Key can be used).
+      #   Credentials and release ID should be obtained from your FoD tenant (either Personal Access Token or API Key can be used).
       #   Automated Audit preference should be configured for the release's Static Scan Settings in the Fortify on Demand portal.
       - name: Download Fortify on Demand Universal CI Tool
         uses: fortify/gha-setup-fod-uploader@6e6bb8a33cb476e240929fa8ebc739ff110e7433
@@ -97,10 +95,10 @@ jobs:
           FOD_USER: ${{ secrets.FOD_USER }}
           FOD_PAT: ${{ secrets.FOD_PAT }}
           FOD_RELEASE_ID: ${{ secrets.FOD_RELEASE_ID }}
-          FOD_UPLOADER_OPTS: "-ep 2 -pp 0 -I 1 -app"
-          FOD_UPLOADER_NOTES: 'Triggered by GitHub Actions (${{ GitHub.server_url }}/${{ GitHub.repository }}/actions/runs/${{ GitHub.run_id }})'
+          FOD_UPLOADER_OPTS: "-ep 2 -pp 0 -I 1 -apf"
+          FOD_UPLOADER_NOTES: 'Triggered by GitHub Actions (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})'
 
-      # Once the scan completes, pull SAST issues from Fortify on Demand and generate SARIF output.
+      # Once scan completes, pull SAST issues from Fortify on Demand and generate SARIF output.
       - name: Export results to GitHub-optimized SARIF
         uses: fortify/gha-export-vulnerabilities@fcb374411cff9809028c911dabb8b57dbdae623b
         with:
