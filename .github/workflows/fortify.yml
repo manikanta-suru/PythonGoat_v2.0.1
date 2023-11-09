@@ -56,12 +56,12 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
-         python-version: ${{ matrix.python-version }} 
+          python-version: ${{ matrix.python-version }} 
               
       - name: Install Dependencies
           run:|
             python -m pip install --upgrade pip
-            install pipenv
+            pip install pipenv
             pip install -r requirements.txt
             pipenv install -r requirements.txt
             
@@ -80,7 +80,7 @@ jobs:
       - name: Package Code + Dependencies
         run: scancentral package $PACKAGE_OPTS -o package.zip
         env:
-          PACKAGE_OPTS: "-but none -oss"
+          PACKAGE_OPTS: "-bt none -oss"
 
       # Start Fortify on Demand SAST scan and wait until results are complete. For more information on FoDUploader commands, see https://github.com/fod-dev/fod-uploader-java
       # TODO: Update ENV variables for your application and create the necessary GitHub Secrets.  Helpful hints:
